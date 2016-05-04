@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+
+import string
+import random
+import csv
+import argparse
+
+
+class LinguaRanda(object):
+
+    def __init__(self, tfile='newlang.csv'):
+        self.tfile = tfile
+
+    def make_new_lang(self, wfile='newlang.csv',
+                      rfile='/usr/share/dict/american-english',
+                      wvowels='', wcons='',
+                      vlim=3, clim=2):
+        writer = csv.writer(open(wfile, 'wb'), delimiter=',')
+
+        for line in open(rfile, 'r'):
+            original = line.rstrip('\n')
+            # Not interested in words that are just possessives of other words
+            # Not interested in words that are proper nouns
+            if not original.endswith('\'s') and not original[0].isupper():
+                translation = ''
+                vowels, consonants = self.__w_consonants_vowels(wvowels, wcons)
+                for _ in range(len(original)):
+                    pool = self.__fill_letter_pool(translation,
+                                                   vowels, consonants,
+                                                   vlim, clim)
+                    translation += ''.join(random.SystemRandom().choice(pool))
+
+                writer.writerow([original, translation])
+
+    def __w_consonants_vowels(self, wvowels, wcons):
+        vowels = 'aeiou'
+        cons = string.ascii_lowercase.translate(string.maketrans('', ''),
+                                                vowels)
+        vowels += wvowels
+        cons += wcons
+        return vowels, cons
+
+    def __fill_letter_pool(self, word, vowels, consonants, vlim, clim):
+        c_count = 0
+        if word[-1:] in consonants:
+            lastset = consonants
+            otherset = vowels
+            limit = clim
+        else:
+            lastset = vowels
+            otherset = consonants
+            limit = vlim
+
+        for i in reversed(word):
+            for c in set(lastset):
+                c_count = c_count + 1 if i == c else c_count
+
+        return otherset if c_count > limit - 1 else vowels + consonants
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-w', '--wordlist',
+                        help='path to wordlist file')
+    parser.add_argument('-o', '--output',
+                        help='path to output file')
+    parser.add_argument('-v', '--wvowels',
+                        help=('string containing extra weight characters for '
+                              'vowels'))
+    parser.add_argument('-c', '--wcons',
+                        help=('string containing extra weight characters for '
+                              'consonants'))
+    parser.add_argument('-vl', '--vlimit',
+                        help=('integer limit of consecutive vowels allowed, '
+                              'default 3'))
+    parser.add_argument('-cl', '--climit',
+                        help=('integer limit of consecutive consonants '
+                              'allowed, default 2'))
+    args = parser.parse_args()
+
+    output = args.output if args.output else 'newlang.csv'
+    wordlist = (args.wordlist if args.wordlist
+                else '/usr/share/dict/american-english')
+    wvowels = args.wvowels if args.wvowels else ''
+    wcons = args.wcons if args.wcons else ''
+    vlimit = args.vlimit if args.vlimit else 3
+    climit = args.climit if args.climit else 2
+
+    lingua = LinguaRanda()
+
+    lingua.make_new_lang(wfile=output, rfile=wordlist, wvowels=wvowels,
+                         wcons=wcons, vlim=vlimit, clim=climit)
+
+if __name__ == '__main__':
+    main()
