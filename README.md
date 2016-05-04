@@ -33,3 +33,9 @@ LinguaRanda.py -v 'iiiiiooeeu' -c 'ttttrrrl'
 
 produces a dictionary with more `i`s, `o`s, `e`s, `u`s, `t`s, `r`s, and `l`s
 than other letters.
+
+The original word list is defined by the user with the `-w` flag or is set to
+`/usr/share/dict/american-english` by default.
+
+The translation is output to a csv file. The file is defined by the user with
+the `-o` flag or set to `./newlang.csv` by default.
