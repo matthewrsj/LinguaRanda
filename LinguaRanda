@@ -10,27 +10,52 @@ class LinguaRanda(object):
 
     def __init__(self, tfile='newlang.csv'):
         self.tfile = tfile
+        self.tdict = dict()
+        self.tdict_to_orig = dict()
 
     def make_new_lang(self, wfile='newlang.csv',
                       rfile='/usr/share/dict/american-english',
                       wvowels='', wcons='',
                       vlim=3, clim=2):
+        temp = list()
         writer = csv.writer(open(wfile, 'wb'), delimiter=',')
 
         for line in open(rfile, 'r'):
-            original = line.rstrip('\n')
-            # Not interested in words that are just possessives of other words
-            # Not interested in words that are proper nouns
-            if not original.endswith('\'s') and not original[0].isupper():
-                translation = ''
-                vowels, consonants = self.__w_consonants_vowels(wvowels, wcons)
-                for _ in range(len(original)):
-                    pool = self.__fill_letter_pool(translation,
-                                                   vowels, consonants,
-                                                   vlim, clim)
-                    translation += ''.join(random.SystemRandom().choice(pool))
+            dup = True
+            while dup is True:
+                original = line.rstrip('\n')
+                # Not interested in words that are just possessives of other words
+                # Not interested in words that are proper nouns
+                if not original.endswith('\'s') and not original[0].isupper():
+                    translation = ''
+                    vowels, consonants = self.__w_consonants_vowels(wvowels, wcons)
+                    for _ in range(len(original)):
+                        pool = self.__fill_letter_pool(translation,
+                                                       vowels, consonants,
+                                                       vlim, clim)
+                        translation += ''.join(random.SystemRandom().choice(pool))
 
-                writer.writerow([original, translation])
+                    if translation not in temp:
+                        temp.append(translation)
+                        writer.writerow([original, translation])
+                        dup = False
+                    else:
+                        dup = True
+                else:
+                    dup = False
+        del(temp)
+
+    def translate_phrase(self, phrase, to_new):
+        phrase = phrase.translate(string.maketrans('', ''), string.punctuation)
+        words = phrase.split(' ')
+        self.__read_dict()
+        dictionary = self.tdict if to_new else self.tdict_to_orig
+        result = ''
+        for word in words:
+                result += dictionary[word] if word in dictionary else word
+                result += ' '
+
+        return result
 
     def __w_consonants_vowels(self, wvowels, wcons):
         vowels = 'aeiou'
@@ -57,13 +82,22 @@ class LinguaRanda(object):
 
         return otherset if c_count > limit - 1 else vowels + consonants
 
+    def __read_dict(self):
+        with open(self.tfile, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            self.tdict = {row[0]: row[1] for row in reader}
+
+        with open(self.tfile, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            self.tdict_to_orig = {row[1]: row[0] for row in reader}
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--wordlist',
                         help='path to wordlist file')
     parser.add_argument('-o', '--output',
-                        help='path to output file')
+                        help='path to output translations file')
     parser.add_argument('-v', '--wvowels',
                         help=('string containing extra weight characters for '
                               'vowels'))
@@ -76,6 +110,12 @@ def main():
     parser.add_argument('-cl', '--climit',
                         help=('integer limit of consecutive consonants '
                               'allowed, default 2'))
+    parser.add_argument('-t', '--translate',
+                        help='string to translate to new language')
+    parser.add_argument('-tf', '--tfile',
+                        help='path to translations file')
+    parser.add_argument('-tb', '--translate_back',
+                        help='string to translate back to original language')
     args = parser.parse_args()
 
     output = args.output if args.output else 'newlang.csv'
@@ -86,10 +126,17 @@ def main():
     vlimit = args.vlimit if args.vlimit else 3
     climit = args.climit if args.climit else 2
 
-    lingua = LinguaRanda()
+    lingua = LinguaRanda(args.tfile) if args.tfile else LinguaRanda()
 
-    lingua.make_new_lang(wfile=output, rfile=wordlist, wvowels=wvowels,
-                         wcons=wcons, vlim=vlimit, clim=climit)
+    if args.translate:
+        print lingua.translate_phrase(args.translate, True)
+    elif args.translate_back:
+        print lingua.translate_phrase(args.translate_back, False)
+    else:
+        lingua.make_new_lang(wfile=output, rfile=wordlist, wvowels=wvowels,
+                             wcons=wcons, vlim=vlimit, clim=climit)
+        print 'output translations to {}'.format(output)
+
 
 if __name__ == '__main__':
     main()
