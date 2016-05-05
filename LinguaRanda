@@ -26,13 +26,19 @@ class LinguaRanda(object):
         `wcons`. Limit consecutive vowels and consonants by `vlim` and `clim`.
         Also sets self.tdict and self.tdict_to_orig.
         """
+        # List of created translations to check for duplicates
         dup_checker = list()
+        # CSV file to write to, delimit with commas
         writer = csv.writer(open(wfile, 'wb'), delimiter=',')
+        # Set the bi-directional dicts
         self.tdict = dict()
         self.tdict_to_orig = dict()
 
+        # Open the rfile, read in each word, one per line
         for line in open(rfile, 'r'):
             dup = True
+            # Keep generating random words until it isn't a duplicate of a
+            # previously generated word
             while dup is True:
                 original = line.rstrip('\n')
                 # Not interested in words that are just possessives of other
@@ -42,31 +48,51 @@ class LinguaRanda(object):
                     vowels, consonants = self.__w_consonants_vowels(wvowels,
                                                                     wcons)
                     for _ in range(len(original)):
+                        # Fill letter choice pool for next letter
                         pool = self.__fill_letter_pool(translation,
                                                        vowels, consonants,
                                                        vlim, clim)
+                        # Select next letter from pool
                         translation += ''.join(random.SystemRandom()
                                                .choice(pool))
 
+                    # Duplicate not found, add word to appropriate places
                     if translation not in dup_checker:
                         dup_checker.append(translation)
                         writer.writerow([original, translation])
                         self.tdict[original] = translation
                         self.tdict_to_orig[translation] = original
                         dup = False
+                    # Duplicate found, try again
                     else:
                         dup = True
+                # If doesn't end in 's or start with uppercase (this is
+                # dictionary specific!) set dup to False so we can continue
+                # to next word
                 else:
                     dup = False
+
+        # Don't need this anymore
         del(dup_checker)
 
     def translate_phrase(self, phrase, to_new):
+        """
+        Translate a phrase from original language to new language if to_new is
+        True, vice versa if to_new is False.
+        """
+        # Remove punctuation from string
         phrase = phrase.translate(string.maketrans('', ''), string.punctuation)
         words = phrase.split(' ')
+
+        # If the in-memory translation dict does not exist, create it
         if self.tdict is None or self.tdict_to_orig is None:
             self.__read_dict()
+
+        # Set proper translation dictionary depending on to_new flag
         dictionary = self.tdict if to_new else self.tdict_to_orig
         result = ''
+
+        # Append translation to result
         for word in words:
             word = word.lower()
             result += dictionary[word] if word in dictionary else word
@@ -75,6 +101,10 @@ class LinguaRanda(object):
         return result
 
     def __w_consonants_vowels(self, wvowels, wcons):
+        """
+        Return weighted sets of vowels and consonants. Just appends the
+        user-defined weights to the vowel and consonant strings.
+        """
         vowels = 'aeiou'
         cons = string.ascii_lowercase.translate(string.maketrans('', ''),
                                                 vowels)
@@ -83,7 +113,15 @@ class LinguaRanda(object):
         return vowels, cons
 
     def __fill_letter_pool(self, word, vowels, consonants, vlim, clim):
+        """
+        Fill letter pool for random letter selection. This is based on what is
+        already in `word` already. Only `vlim` consecutive vowels and `clim`
+        consecutive consonants are allowed. The `vowels` and `consonants`
+        strings are the weighted selections of vowels and consonants.
+        """
         c_count = 0
+        # Check last letter in the word. If consonant continue checking for
+        # consonants. Vice versa for vowels
         if word[-1:] in consonants:
             lastset = consonants
             otherset = vowels
@@ -93,23 +131,32 @@ class LinguaRanda(object):
             otherset = consonants
             limit = vlim
 
+        # Count last consecutive vowels or consonants
         for i in reversed(word):
             for c in set(lastset):
                 c_count = c_count + 1 if i == c else c_count
 
+        # Letter pool is the 'other' set if vlim or clim is exceeded
+        # otherwise return both
         return otherset if c_count > limit - 1 else vowels + consonants
 
     def __read_dict(self):
+        """
+        Populate bi-directional dicts with self.tfile translation file
+        """
+        # Original to new
         with open(self.tfile, 'r') as csvfile:
             reader = csv.reader(csvfile)
             self.tdict = {row[0]: row[1] for row in reader}
 
+        # New to original
         with open(self.tfile, 'r') as csvfile:
             reader = csv.reader(csvfile)
             self.tdict_to_orig = {row[1]: row[0] for row in reader}
 
 
 def main():
+    # Command line flags
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--wordlist',
                         help='path to wordlist file')
