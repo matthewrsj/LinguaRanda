@@ -59,7 +59,7 @@ hello there how are you my friend
 Example using weights:
 
 ```
-LinguaRanda.py -v 'iiiiiooeeu' -c 'ttttrrrl'
+LinguaRanda -v 'iiiiiooeeu' -c 'ttttrrrl'
 ```
 
 produces a dictionary with more `i`s, `o`s, `e`s, `u`s, `t`s, `r`s, and `l`s

@@ -9,51 +9,68 @@ import argparse
 class LinguaRanda(object):
 
     def __init__(self, tfile='newlang.csv'):
+        # file that contains all the translations
         self.tfile = tfile
-        self.tdict = dict()
-        self.tdict_to_orig = dict()
+        # dictionary containing original to new translations
+        self.tdict = None
+        # dictionary containing new to original translations
+        self.tdict_to_orig = None
 
     def make_new_lang(self, wfile='newlang.csv',
                       rfile='/usr/share/dict/american-english',
                       wvowels='', wcons='',
                       vlim=3, clim=2):
-        temp = list()
+        """
+        Create a new language csv file `wfile` that contains translations from
+        `rfile` to randomize language. Weight letter frequency by `wvowels` and
+        `wcons`. Limit consecutive vowels and consonants by `vlim` and `clim`.
+        Also sets self.tdict and self.tdict_to_orig.
+        """
+        dup_checker = list()
         writer = csv.writer(open(wfile, 'wb'), delimiter=',')
+        self.tdict = dict()
+        self.tdict_to_orig = dict()
 
         for line in open(rfile, 'r'):
             dup = True
             while dup is True:
                 original = line.rstrip('\n')
-                # Not interested in words that are just possessives of other words
-                # Not interested in words that are proper nouns
+                # Not interested in words that are just possessives of other
+                # words or that are proper nouns
                 if not original.endswith('\'s') and not original[0].isupper():
                     translation = ''
-                    vowels, consonants = self.__w_consonants_vowels(wvowels, wcons)
+                    vowels, consonants = self.__w_consonants_vowels(wvowels,
+                                                                    wcons)
                     for _ in range(len(original)):
                         pool = self.__fill_letter_pool(translation,
                                                        vowels, consonants,
                                                        vlim, clim)
-                        translation += ''.join(random.SystemRandom().choice(pool))
+                        translation += ''.join(random.SystemRandom()
+                                               .choice(pool))
 
-                    if translation not in temp:
-                        temp.append(translation)
+                    if translation not in dup_checker:
+                        dup_checker.append(translation)
                         writer.writerow([original, translation])
+                        self.tdict[original] = translation
+                        self.tdict_to_orig[translation] = original
                         dup = False
                     else:
                         dup = True
                 else:
                     dup = False
-        del(temp)
+        del(dup_checker)
 
     def translate_phrase(self, phrase, to_new):
         phrase = phrase.translate(string.maketrans('', ''), string.punctuation)
         words = phrase.split(' ')
-        self.__read_dict()
+        if self.tdict is None or self.tdict_to_orig is None:
+            self.__read_dict()
         dictionary = self.tdict if to_new else self.tdict_to_orig
         result = ''
         for word in words:
-                result += dictionary[word] if word in dictionary else word
-                result += ' '
+            word = word.lower()
+            result += dictionary[word] if word in dictionary else word
+            result += ' '
 
         return result
 
