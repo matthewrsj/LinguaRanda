@@ -100,6 +100,11 @@ class LinguaRanda(object):
 
         return result
 
+    def __gen_phonemes():
+        phonemes = []
+        for _ in range(44):
+            phonemes +=
+
     def __w_consonants_vowels(self, wvowels, wcons):
         """
         Return weighted sets of vowels and consonants. Just appends the
