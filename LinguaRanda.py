@@ -15,6 +15,11 @@ class LinguaRanda(object):
         self.tdict = None
         # dictionary containing new to original translations
         self.tdict_to_orig = None
+        self.phonemesc = []
+        self.phonemesv = []
+        self.phonemescv = []
+        self.phonemesr = []
+        self.__get_phonemes()
 
     def make_new_lang(self, wfile='newlang.csv',
                       rfile='/usr/share/dict/american-english',
@@ -47,7 +52,7 @@ class LinguaRanda(object):
                     translation = ''
                     vowels, consonants = self.__w_consonants_vowels(wvowels,
                                                                     wcons)
-                    for _ in range(len(original)):
+                    for i in range(len(original)):
                         # Fill letter choice pool for next letter
                         pool = self.__fill_letter_pool(translation,
                                                        vowels, consonants,
@@ -100,10 +105,23 @@ class LinguaRanda(object):
 
         return result
 
-    def __gen_phonemes():
-        phonemes = []
-        for _ in range(44):
-            phonemes +=
+    def __get_phonemes(self):
+        self.phonemesc = []
+        self.phonemesv = []
+        self.phonemescv = []
+        self.phonemesr = []
+        f = open('phonemes/phonemev', 'r')
+        for line in f.readlines():
+            self.phonemesv.append(line[:-1])
+        f = open('phonemes/phonemec', 'r')
+        for line in f.readlines():
+            self.phonemesc.append(line[:-1])
+        f = open('phonemes/phonemecv', 'r')
+        for line in f.readlines():
+            self.phonemescv.append(line[:-1])
+        f = open('phonemes/phonemer', 'r')
+        for line in f.readlines():
+            self.phonemesr.append(line[:-1])
 
     def __w_consonants_vowels(self, wvowels, wcons):
         """
@@ -127,13 +145,13 @@ class LinguaRanda(object):
         c_count = 0
         # Check last letter in the word. If consonant continue checking for
         # consonants. Vice versa for vowels
-        if word[-1:] in consonants:
-            lastset = consonants
-            otherset = vowels
+        if word[-1:] in self.phonemesc:
+            lastset = self.phonemesc
+            otherset = self.phonemesv
             limit = clim
         else:
-            lastset = vowels
-            otherset = consonants
+            lastset = self.phonemesv
+            otherset = self.phonemesc
             limit = vlim
 
         # Count last consecutive vowels or consonants
@@ -143,7 +161,8 @@ class LinguaRanda(object):
 
         # Letter pool is the 'other' set if vlim or clim is exceeded
         # otherwise return both
-        return otherset if c_count > limit - 1 else vowels + consonants
+        option = self.phonemesv + self.phonemescv + self.phonemesr
+        return otherset if c_count > limit - 1 else option
 
     def __read_dict(self):
         """
