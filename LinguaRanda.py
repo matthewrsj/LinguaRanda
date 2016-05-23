@@ -38,6 +38,7 @@ class LinguaRanda(object):
         # Set the bi-directional dicts
         self.tdict = dict()
         self.tdict_to_orig = dict()
+        prev = 'a'
 
         # Open the rfile, read in each word, one per line
         for line in open(rfile, 'r'):
@@ -46,20 +47,29 @@ class LinguaRanda(object):
             # previously generated word
             while dup is True:
                 original = line.rstrip('\n')
+                nextl = original[0]
+                if nextl != prev:
+                    print nextl
+                    prev = nextl
                 # Not interested in words that are just possessives of other
                 # words or that are proper nouns
-                if not original.endswith('\'s') and not original[0].isupper():
+                if (not original.endswith('\'s') and not original[0].isupper()
+                    and (original == 'i' or original == 'a' or len(original) != 1)):
+                    print original
                     translation = ''
                     vowels, consonants = self.__w_consonants_vowels(wvowels,
                                                                     wcons)
-                    for i in range(len(original)):
+                    #for i in range(len(original)):
+                    while len(translation) < len(original):
                         # Fill letter choice pool for next letter
                         pool = self.__fill_letter_pool(translation,
                                                        vowels, consonants,
                                                        vlim, clim)
+                        n = ''.join(random.SystemRandom().choice(pool))
                         # Select next letter from pool
-                        translation += ''.join(random.SystemRandom()
-                                               .choice(pool))
+                        translation += n #''.join(random.SystemRandom()
+                                               #.choice(pool))
+                    print "                      " + translation
 
                     # Duplicate not found, add word to appropriate places
                     if translation not in dup_checker:
@@ -77,7 +87,7 @@ class LinguaRanda(object):
                 else:
                     dup = False
 
-        # Don't need this anymore
+        # Don't need this anymore?
         del(dup_checker)
 
     def translate_phrase(self, phrase, to_new):
