@@ -55,7 +55,6 @@ class LinguaRanda(object):
                 # words or that are proper nouns
                 if (not original.endswith('\'s') and not original[0].isupper()
                     and (original == 'i' or original == 'a' or len(original) != 1)):
-                    print original
                     translation = ''
                     vowels, consonants = self.__w_consonants_vowels(wvowels,
                                                                     wcons)
@@ -69,7 +68,6 @@ class LinguaRanda(object):
                         # Select next letter from pool
                         translation += n #''.join(random.SystemRandom()
                                                #.choice(pool))
-                    print "                      " + translation
 
                     # Duplicate not found, add word to appropriate places
                     if translation not in dup_checker:
@@ -147,6 +145,7 @@ class LinguaRanda(object):
 
     def __fill_letter_pool(self, word, vowels, consonants, vlim, clim):
         """
+        NEEDS WORK
         Fill letter pool for random letter selection. This is based on what is
         already in `word` already. Only `vlim` consecutive vowels and `clim`
         consecutive consonants are allowed. The `vowels` and `consonants`
@@ -171,6 +170,7 @@ class LinguaRanda(object):
 
         # Letter pool is the 'other' set if vlim or clim is exceeded
         # otherwise return both
+        # TODO: Come up with a better way to select pool
         option = self.phonemesv + self.phonemescv + self.phonemesr
         return otherset if c_count > limit - 1 else option
 
